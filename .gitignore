@@ -1,0 +1,63 @@
+# ============================================================
+# StuGig Monorepo — root .gitignore
+# ============================================================
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+.vite/
+
+# ============================================================
+# ENVIRONMENT & SECRETS — NEVER COMMIT THESE
+# ============================================================
+.env
+.env.*
+!.env.example
+**/\.env
+**/.env.*
+!**/.env.example
+
+# Keep example files — they document required keys without values
+# .env.example  ← tracked intentionally
+
+# ============================================================
+# Dev-only testing helpers — safe in src/ but must never
+# appear in public/ or be accessible as a static file in prod
+# ============================================================
+client/public/set-auth.html
+
+# ============================================================
+# Logs
+# ============================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================================
+# OS / Editor files
+# ============================================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================================================
+# Misc
+# ============================================================
+*.local
+.cache/
+.turbo/

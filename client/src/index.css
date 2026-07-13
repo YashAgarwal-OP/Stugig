@@ -1,0 +1,70 @@
+/* Google Fonts — must be first @import */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap");
+
+@import "tailwindcss";
+
+@theme {
+  /* Brand colors sourced from Stitch "StuGig | Design System Reference" */
+  --color-primary:          #3525cd;   /* Deep Indigo */
+  --color-primary-dark:     #2419a0;
+  --color-primary-container:#4f46e5;
+  --color-primary-light:    #e2dfff;
+  --color-primary-dim:      #c3c0ff;
+
+  --color-secondary:        #006a61;   /* Vibrant Teal */
+  --color-secondary-container: #86f2e4;
+  --color-secondary-light:  #89f5e7;
+
+  --color-accent:           #a44100;   /* Warm Amber / tertiary */
+  --color-accent-container: #ffdbcc;
+
+  --color-surface:          #f8f9fa;
+  --color-surface-dim:      #d9dadb;
+  --color-surface-container:#edeeef;
+  --color-surface-low:      #f3f4f5;
+  --color-surface-high:     #e7e8e9;
+  --color-surface-highest:  #e1e3e4;
+
+  --color-on-surface:       #191c1d;
+  --color-on-surface-muted: #464555;
+  --color-outline:          #777587;
+  --color-outline-variant:  #c7c4d8;
+
+  --color-error:            #ba1a1a;
+  --color-error-container:  #ffdad6;
+  --color-on-error:         #ffffff;
+
+  --color-success:          #006a61;
+  --color-warning:          #a44100;
+  --color-info:             #3525cd;
+
+  /* Typography — Montserrat headlines, Inter body */
+  --font-display:   "Montserrat", sans-serif;
+  --font-headline:  "Montserrat", sans-serif;
+  --font-body:      "Inter", sans-serif;
+  --font-label:     "Inter", sans-serif;
+
+  /* Border radius scale */
+  --radius-sm:      0.25rem;   /* 4px  */
+  --radius-DEFAULT: 0.5rem;    /* 8px  standard UI */
+  --radius-md:      0.75rem;   /* 12px */
+  --radius-lg:      1rem;      /* 16px cards */
+  --radius-xl:      1.5rem;    /* 24px */
+  --radius-full:    9999px;    /* pills */
+
+  /* Spacing / layout */
+  --spacing-navbar: 64px;
+  --spacing-sidebar: 240px;
+  --spacing-gutter: 24px;
+}
+
+
+/* Base resets */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  margin: 0;
+}
+h1,h2,h3,h4,h5,h6 { font-family: var(--font-headline); }

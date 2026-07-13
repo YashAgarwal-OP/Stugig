@@ -1,0 +1,33 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables — NEVER commit secrets
+.env
+.env.*
+!.env.example
+
+# Dev-only testing helper — was in public/, now a React page in src/pages/DevSetAuth.jsx
+# The file in public/ has been deleted. If it ever reappears, block it:
+public/set-auth.html
