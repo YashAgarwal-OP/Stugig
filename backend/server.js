@@ -16,11 +16,32 @@ const io = new Server(server, {
       // Allow requests from CLIENT_URL, or any onrender.com subdomain,
       // or localhost in development (and no-origin requests like curl/Postman)
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      const allowed = [clientUrl, /\.onrender\.com$/, /localhost/];
-      if (!origin || allowed.some(p => typeof p === 'string' ? p === origin : p.test(origin))) {
+      const allowedOrigins = [
+        clientUrl,
+        'http://localhost:5173',
+        'http://localhost:3000',
+        /https:\/\/.*\.onrender\.com$/,
+      ];
+      
+      // No origin (server-to-server, curl, postman)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Check if origin matches any allowed pattern
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (typeof allowed === 'string') {
+          return origin === allowed;
+        }
+        // RegExp pattern
+        return allowed.test(origin);
+      });
+      
+      if (isAllowed) {
         callback(null, true);
       } else {
-        callback(null, true); // permissive for now — tighten after confirming URLs
+        console.warn(`[Socket.io] Rejected connection from origin: ${origin}`);
+        callback(null, true); // Still allow but log warning - tighten in production after testing
       }
     },
     methods: ['GET', 'POST'],

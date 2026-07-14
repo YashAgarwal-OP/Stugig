@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import DashboardShell from '../components/organisms/DashboardShell';
 import { ConversationListItem, MessageBubble, TypingIndicator, ChatInputBar } from '../components/organisms/Chat';
@@ -45,6 +46,7 @@ const freelancerNavItems = [
 
 export default function Messages() {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -55,23 +57,47 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [activeJob, setActiveJob] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [socketError, setSocketError] = useState('');
 
   const navItems = user?.role === 'client' ? clientNavItems : freelancerNavItems;
 
   // Initialize socket connection
   useEffect(() => {
     if (!token) return;
-    // Connect to the same origin — Vite proxy forwards /socket.io to the backend
-    socketRef.current = io(window.location.origin, {
+    
+    // Use VITE_API_URL for socket connection in production, window.location.origin in dev
+    const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    
+    console.log('[Socket] Connecting to:', socketUrl);
+    
+    socketRef.current = io(socketUrl, {
       auth: { token },
-      path: '/socket.io',
+      transports: ['websocket', 'polling'], // Try websocket first, fallback to polling
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socketRef.current.on('connect', () => {
-      console.log('Connected to socket server');
+      console.log('[Socket] Connected successfully');
+      setSocketConnected(true);
+      setSocketError('');
+    });
+
+    socketRef.current.on('connect_error', (err) => {
+      console.error('[Socket] Connection error:', err.message);
+      setSocketConnected(false);
+      setSocketError('Unable to connect to chat server. Messages may not be real-time.');
+    });
+
+    socketRef.current.on('disconnect', (reason) => {
+      console.log('[Socket] Disconnected:', reason);
+      setSocketConnected(false);
     });
 
     socketRef.current.on('new-message', (message) => {
+      console.log('[Socket] New message received:', message);
       // jobId may be a populated object or a plain string depending on server populate
       const incomingJobId = message.jobId?._id?.toString() || message.jobId?.toString();
       if (activeConversation && incomingJobId === activeConversation) {
@@ -91,7 +117,10 @@ export default function Messages() {
     });
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      if (socketRef.current) {
+        console.log('[Socket] Disconnecting...');
+        socketRef.current.disconnect();
+      }
     };
   }, [token, activeConversation]);
 
@@ -194,6 +223,16 @@ export default function Messages() {
         <div className="w-80 border-r border-[#e7e8e9] flex flex-col">
           <div className="p-4 border-b border-[#e7e8e9] bg-[#f8f9fa]">
             <h2 className="font-bold font-headline text-lg text-[#191c1d]">Chats & Messages</h2>
+            {/* Socket Connection Status */}
+            <div className="flex items-center gap-2 mt-2">
+              <div className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-xs text-[#777587] font-body">
+                {socketConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+            {socketError && (
+              <p className="text-xs text-[#ba1a1a] font-body mt-1">{socketError}</p>
+            )}
           </div>
           <div className="flex-1 overflow-y-auto divide-y divide-[#e7e8e9]">
             {loading ? (
@@ -245,7 +284,7 @@ export default function Messages() {
                   )}
                   {/* Pay Freelancer CTA */}
                   {user.role === 'client' && activeJob?.status === 'completed' && (
-                    <Button variant="primary" size="sm" onClick={() => window.location.href = `/payment?jobId=${activeConversation}`}>
+                    <Button variant="primary" size="sm" onClick={() => navigate(`/payment?jobId=${activeConversation}`)}>
                       Pay Freelancer
                     </Button>
                   )}
