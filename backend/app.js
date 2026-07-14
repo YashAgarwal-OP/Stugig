@@ -48,7 +48,25 @@ app.use('/api/notifications',     require('./routes/notificationRoutes'));
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'StuGig API is running' });
+  const mongoose = require('mongoose');
+  const dbStatus = mongoose.connection.readyState;
+  const dbStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+
+  res.status(200).json({ 
+    success: true, 
+    message: 'StuGig API is running',
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      status: dbStates[dbStatus] || 'unknown',
+      connected: dbStatus === 1
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
 // ── 404 handler ───────────────────────────────────────────────────────────────

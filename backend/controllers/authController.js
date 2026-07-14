@@ -37,9 +37,35 @@ exports.signup = async (req, res) => {
   try {
     const { name, email, password, role, skills } = req.body;
 
+    // Validation
+    if (!name || !email || !password || !role) {
+      console.log('[Signup] Validation failed - missing required fields');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please provide name, email, password, and role' 
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Password must be at least 6 characters' 
+      });
+    }
+
+    if (!['freelancer', 'client', 'admin'].includes(role)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Role must be freelancer, client, or admin' 
+      });
+    }
+
+    console.log(`[Signup] Processing signup for: ${email} (${role})`);
+
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
+      console.log(`[Signup] User already exists: ${email}`);
       return res.status(400).json({ success: false, error: 'User already exists with this email' });
     }
 
@@ -56,10 +82,14 @@ exports.signup = async (req, res) => {
       skills: role === 'freelancer' ? (skills || []) : []
     });
 
+    console.log(`[Signup] User created successfully: ${user._id}`);
+
     const token = generateToken(user._id);
 
     // Send welcome email (non-blocking — failure never breaks signup)
-    sendWelcomeEmail(user).catch(() => {});
+    sendWelcomeEmail(user).catch((err) => {
+      console.log('[Signup] Welcome email failed (non-blocking):', err.message);
+    });
 
     res.status(201).json({
       success: true,
@@ -67,7 +97,23 @@ exports.signup = async (req, res) => {
       ...buildUserPayload(user),
     });
   } catch (error) {
-    console.error(error);
+    console.error('[Signup] Error:', error);
+    
+    // Provide specific error messages for common MongoDB issues
+    if (error.name === 'MongooseError' || error.name === 'MongoNetworkError') {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Database connection failed. Please try again later.' 
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email already exists' 
+      });
+    }
+
     res.status(500).json({ success: false, error: error.message });
   }
 };

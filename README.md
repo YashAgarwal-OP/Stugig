@@ -1,183 +1,282 @@
-# StuGig — Student Freelance Marketplace
+# StuGig - Student Freelance Marketplace
 
-A full-stack freelance marketplace where students offer services, post job requests, bid on tasks, communicate in real-time, and complete payments. Think Fiverr/Upwork, built for campus life.
+A full-stack freelance marketplace platform tailored for students, featuring job postings, bidding, real-time chat, payments, and AI-powered matching.
 
----
+## 🚀 Features
 
-## Tech Stack
+- **User Authentication** - JWT-based signup/login with role-based access (Freelancer, Client, Admin)
+- **Job Marketplace** - Post jobs, browse opportunities, submit bids
+- **Service Listings** - Freelancers can create service offerings
+- **Real-time Chat** - Socket.io powered messaging between clients and freelancers
+- **Payment System** - Stripe integration with 15% platform commission
+- **Reviews & Ratings** - Rate and review completed jobs
+- **AI Features** - Gemini-powered job matching and bid assistance
+- **Admin Dashboard** - User management, analytics, dispute resolution
+- **Email Notifications** - Welcome emails, bid notifications, password reset
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, Tailwind CSS v4, Vite |
-| State | React Context API |
-| Backend | Node.js, Express.js |
-| Database | MongoDB + Mongoose |
-| Auth | JWT + Bcrypt |
-| Real-time | Socket.io |
-| Payments | Stripe (sandbox / production) |
-| Email | Nodemailer (SMTP — SendGrid / Resend) |
-| AI | Google Gemini (with keyword-fallback mock) |
+## 📦 Tech Stack
 
----
+### Frontend
+- **React.js** - UI framework
+- **Tailwind CSS** - Styling
+- **Vite** - Build tool
+- **Axios** - HTTP client
+- **Socket.io Client** - Real-time communication
 
-## Project Structure
+### Backend
+- **Node.js** - Runtime
+- **Express.js** - Web framework
+- **MongoDB** - Database (via Mongoose)
+- **Socket.io** - WebSocket server
+- **JWT** - Authentication
+- **Bcrypt** - Password hashing
+- **Stripe** - Payment processing
+- **Nodemailer** - Email delivery
+
+## 📁 Project Structure
 
 ```
 stugig/
-├── backend/          ← Express API + Socket.io server
-│   ├── controllers/
-│   ├── models/
-│   ├── routes/
-│   ├── middleware/
-│   ├── utils/        ← notify.js, sendEmail.js
-│   ├── config/
-│   ├── uploads/      ← local image storage (dev only)
-│   ├── server.js
-│   └── .env.example
-├── client/           ← Vite + React frontend
+├── backend/              # Express.js API
+│   ├── config/          # Database configuration
+│   ├── controllers/     # Route handlers
+│   ├── middleware/      # Auth middleware
+│   ├── models/          # Mongoose schemas
+│   ├── routes/          # API routes
+│   ├── utils/           # Helper functions (email, etc.)
+│   ├── app.js           # Express app setup
+│   └── server.js        # HTTP + Socket.io server
+│
+├── client/              # React frontend
+│   ├── public/          # Static assets
 │   ├── src/
-│   │   ├── pages/
-│   │   ├── components/
-│   │   ├── context/
-│   │   └── api/
-│   └── .env.example
-└── render.yaml       ← One-click Render deployment
+│   │   ├── api/         # Axios client
+│   │   ├── components/  # React components (atoms/molecules/organisms)
+│   │   ├── context/     # React Context (Auth, Theme)
+│   │   ├── pages/       # Page components
+│   │   └── App.jsx      # Root component
+│   └── vite.config.js   # Vite configuration
+│
+└── render.yaml          # Render deployment config
 ```
 
----
-
-## Local Development
+## 🛠️ Local Development Setup
 
 ### Prerequisites
-- Node.js v18+
-- MongoDB running locally on `localhost:27017` (or a MongoDB Atlas URI)
+- Node.js >= 18.0.0
+- MongoDB (local or Atlas)
+- Stripe account (test mode)
+- (Optional) Gmail app password for emails
 
-### 1. Backend
+### Backend Setup
 
+1. Navigate to backend directory:
 ```bash
 cd backend
-npm install
-cp .env.example .env      # fill in your values
-npm run dev               # starts on http://localhost:5000
 ```
 
-### 2. Frontend
+2. Install dependencies:
+```bash
+npm install
+```
 
+3. Create `.env` file:
+```bash
+cp .env.example .env
+```
+
+4. Configure environment variables in `.env`:
+```env
+PORT=5000
+NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/stugig
+JWT_SECRET=your-secret-key
+STRIPE_SECRET_KEY=sk_test_your_key
+CLIENT_URL=http://localhost:5173
+```
+
+5. Start the server:
+```bash
+npm run dev
+```
+
+Backend will run on http://localhost:5000
+
+### Frontend Setup
+
+1. Navigate to client directory:
 ```bash
 cd client
-npm install
-cp .env.example .env      # add your Stripe publishable key
-npm run dev               # starts on http://localhost:5173
 ```
 
-The Vite dev server proxies `/api` and `/socket.io` to `localhost:5000` automatically — no CORS issues.
+2. Install dependencies:
+```bash
+npm install
+```
 
-### 3. Run Backend Tests
+3. Create `.env` file:
+```bash
+cp .env.example .env
+```
 
+4. Configure environment variables in `.env`:
+```env
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key
+```
+Note: In development, `VITE_API_URL` is NOT needed (Vite proxy handles it)
+
+5. Start the dev server:
+```bash
+npm run dev
+```
+
+Frontend will run on http://localhost:5173
+
+## 🌐 Deployment to Render
+
+### Quick Deploy
+
+1. **Push to GitHub**:
+```bash
+git add .
+git commit -m "Prepare for deployment"
+git push origin main
+```
+
+2. **MongoDB Atlas Setup**:
+   - Create cluster at https://cloud.mongodb.com/
+   - Network Access → Add IP → Allow from anywhere (0.0.0.0/0)
+   - Copy connection string
+
+3. **Deploy Backend**:
+   - Render Dashboard → New → Web Service
+   - Connect GitHub repo
+   - Root Directory: `backend`
+   - Build: `npm install`
+   - Start: `npm start`
+   - Add environment variables (see `backend/.env.render`)
+
+4. **Deploy Frontend**:
+   - Render Dashboard → New → Static Site
+   - Connect GitHub repo
+   - Root Directory: `client`
+   - Build: `npm install && npm run build`
+   - Publish: `dist`
+   - Add environment variables:
+     - `VITE_API_URL=https://your-backend.onrender.com`
+     - `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...`
+
+5. **Update Backend**:
+   - Go to backend service → Environment
+   - Update `CLIENT_URL` to frontend URL
+   - Manually redeploy
+
+📖 **Detailed Guide**: See [RENDER_DEPLOYMENT_GUIDE.md](./RENDER_DEPLOYMENT_GUIDE.md)
+
+## 🧪 Testing
+
+### Test Backend API:
 ```bash
 cd backend
 npm test
 ```
 
----
+### Test Signup Endpoint:
+```bash
+node test-signup.js http://localhost:5000
+# or for production:
+node test-signup.js https://your-backend.onrender.com
+```
 
-## Environment Variables
+### Manual API Testing:
+```bash
+# Health check
+curl http://localhost:5000/api/health
 
-### Backend (`backend/.env`)
+# Signup
+curl -X POST http://localhost:5000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","email":"test@test.com","password":"pass123","role":"freelancer"}'
+```
 
-| Variable | Description |
-|---|---|
-| `MONGO_URI` | MongoDB connection string |
-| `JWT_SECRET` | Long random secret for signing JWTs |
-| `JWT_EXPIRE` | Token lifetime (e.g. `30d`) |
-| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_test_...`) |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `STRIPE_SUCCESS_URL` | Redirect URL after successful payment |
-| `STRIPE_CANCEL_URL` | Redirect URL after cancelled payment |
-| `GEMINI_API_KEY` | Google Gemini API key (AI features) |
-| `CLIENT_URL` | Frontend URL for CORS + email links |
-| `EMAIL_HOST` | SMTP host (e.g. `smtp.sendgrid.net`) |
-| `EMAIL_PORT` | SMTP port (587 or 465) |
-| `EMAIL_USER` | SMTP username |
-| `EMAIL_PASS` | SMTP password / API key |
-| `EMAIL_FROM` | Sender address |
+## 🔧 Common Issues
 
-### Frontend (`client/.env`)
+### "Signup not working on Render"
 
-| Variable | Description |
-|---|---|
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (`pk_test_...`) |
-| `VITE_API_URL` | Backend URL (production only — leave empty in dev) |
+1. **Check backend logs** in Render dashboard
+2. **Verify environment variables** are set correctly
+3. **Test backend health**: Visit `https://your-backend.onrender.com/api/health`
+4. **Check browser console** for error messages (F12 → Console)
+5. **Verify MongoDB Atlas** allows access from 0.0.0.0/0
 
----
+Common causes:
+- Missing `VITE_API_URL` in frontend env vars
+- Wrong `MONGO_URI` or MongoDB network access blocked
+- CORS issues (already handled in code)
 
-## Deploying to Render
+### "Database connection failed"
 
-This project includes a `render.yaml` Blueprint for one-click deployment.
+- Verify MongoDB Atlas connection string
+- Check Network Access allows 0.0.0.0/0
+- Ensure password in URI is URL-encoded if it contains special characters
 
-### Steps
+### "JWT errors"
 
-1. **Push to GitHub** — make sure both `backend/` and `client/` directories are committed.
+- Verify `JWT_SECRET` is set and consistent between deployments
+- Check token is being sent in Authorization header
 
-2. **Create a MongoDB Atlas cluster** (free tier works):
-   - Create a cluster at [cloud.mongodb.com](https://cloud.mongodb.com)
-   - Add a database user and whitelist `0.0.0.0/0` (Render IPs)
-   - Copy the connection string
+## 📚 API Documentation
 
-3. **Deploy on Render**:
-   - Go to [render.com](https://render.com) → New → Blueprint
-   - Connect your GitHub repo
-   - Render reads `render.yaml` and creates `stugig-backend` + `stugig-frontend`
+### Authentication
+- `POST /api/auth/signup` - Register new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password with token
 
-4. **Set secret environment variables** in each service's Render dashboard:
+### Jobs
+- `GET /api/jobs` - List all jobs
+- `POST /api/jobs` - Create new job (Client only)
+- `GET /api/jobs/:id` - Get job details
+- `PUT /api/jobs/:id` - Update job
+- `DELETE /api/jobs/:id` - Delete job
 
-   **stugig-backend:**
-   ```
-   MONGO_URI          = mongodb+srv://...
-   JWT_SECRET         = <long random string>
-   STRIPE_SECRET_KEY  = sk_test_...
-   STRIPE_WEBHOOK_SECRET = whsec_...
-   GEMINI_API_KEY     = ...
-   CLIENT_URL         = https://stugig-frontend.onrender.com
-   STRIPE_SUCCESS_URL = https://stugig-frontend.onrender.com/payment/success
-   STRIPE_CANCEL_URL  = https://stugig-frontend.onrender.com/payment
-   EMAIL_HOST / EMAIL_PORT / EMAIL_USER / EMAIL_PASS / EMAIL_FROM (optional)
-   ```
+### Bids
+- `GET /api/bids` - List bids
+- `POST /api/bids` - Submit bid (Freelancer only)
+- `PUT /api/bids/:id/accept` - Accept bid (Client only)
+- `PUT /api/bids/:id/reject` - Reject bid
 
-   **stugig-frontend:**
-   ```
-   VITE_API_URL                = https://stugig-backend.onrender.com
-   VITE_STRIPE_PUBLISHABLE_KEY = pk_test_...
-   ```
+### Payments
+- `POST /api/payments/create-checkout` - Create Stripe checkout session
+- `POST /api/payments/webhook` - Stripe webhook handler
 
-5. **Redeploy the frontend** after setting `VITE_API_URL` so the build bakes in the correct backend URL.
+### Messages
+- `GET /api/messages/:jobId` - Get conversation messages
+- WebSocket events: `send-message`, `typing`, `new-message`
 
-6. **Set up Stripe webhooks** in the Stripe Dashboard:
-   - Endpoint: `https://stugig-backend.onrender.com/api/payments/webhook`
-   - Event: `payment_intent.succeeded`
-   - Copy the signing secret → set as `STRIPE_WEBHOOK_SECRET`
+## 🤝 Contributing
 
----
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## Key Features
+## 📄 License
 
-- **Roles** — Freelancer, Client, Admin (each with separate dashboards and permissions)
-- **Jobs** — Post, browse, filter by category/budget, full-text search, pagination
-- **Bidding** — Submit proposals, AI Bidding Assistant (Gemini), accept/reject with auto-notifications
-- **Payments** — Stripe PaymentIntent, **15% platform commission** enforced server-side only
-- **Chat** — Real-time Socket.io messaging per job thread, typing indicators
-- **Notifications** — Real-time bell + DB persistence, auto-expiry after 60 days
-- **Services** — Freelancers list gig-style services; clients browse and contact
-- **Portfolio** — Image uploads, project URLs, displayed on public profiles
-- **Reviews** — Multi-criterion rating (communication, quality, timeliness), avg auto-recalculated
-- **AI Matchmaker** — Gemini scores job/freelancer compatibility; falls back to keyword overlap
-- **Admin Panel** — Revenue charts, activity feed, user suspend/delete
-- **Email** — Welcome, bid accepted, payment received/confirmed, password reset
+This project is for educational purposes.
 
----
+## 👨‍💻 Author
 
-## Known Limitations
+Yash Agarwal
 
-- **File storage** — Uploaded images are stored in `backend/uploads/` on disk. On Render's free tier the filesystem is ephemeral; swap multer's disk storage for Cloudinary or S3 for persistence.
-- **Stripe webhooks in dev** — Use the Stripe CLI: `stripe listen --forward-to localhost:5000/api/payments/webhook`
-- **AI cold start** — Gemini calls add ~1–2s latency. The keyword fallback is instant.
+## 🆘 Support
+
+For issues and questions:
+1. Check [RENDER_DEPLOYMENT_GUIDE.md](./RENDER_DEPLOYMENT_GUIDE.md)
+2. Review backend logs in Render dashboard
+3. Check browser console for frontend errors
+4. Open an issue on GitHub with:
+   - Error message
+   - Backend logs
+   - Steps to reproduce

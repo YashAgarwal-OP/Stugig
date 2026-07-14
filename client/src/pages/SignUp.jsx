@@ -50,7 +50,7 @@ export default function SignUp() {
         navigate('/dashboard/freelancer');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Error creating account. Please try again.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Error creating account. Please try again.');
     } finally {
       setLoading(false);
     }
