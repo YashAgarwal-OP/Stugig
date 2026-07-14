@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <title>StuGig - Student Freelance Marketplace</title>
+    <!-- SPA redirect fallback for Render static sites -->
+    <script>
+      (function() {
+        var path = window.location.pathname;
+        if (path && path !== '/' && path !== '/index.html') {
+          sessionStorage.redirect = window.location.href;
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
