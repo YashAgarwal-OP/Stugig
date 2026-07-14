@@ -13,7 +13,18 @@ const app = express();
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 // ── Standard middleware ───────────────────────────────────────────────────────
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    // Allow no-origin requests (Postman, curl) and any matching origin
+    if (!origin || origin === clientUrl || /\.onrender\.com$/.test(origin) || /localhost/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // permissive — tighten after confirming production URLs
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 // ── Static file serving for uploads ──────────────────────────────────────────

@@ -12,8 +12,19 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    origin: (origin, callback) => {
+      // Allow requests from CLIENT_URL, or any onrender.com subdomain,
+      // or localhost in development (and no-origin requests like curl/Postman)
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+      const allowed = [clientUrl, /\.onrender\.com$/, /localhost/];
+      if (!origin || allowed.some(p => typeof p === 'string' ? p === origin : p.test(origin))) {
+        callback(null, true);
+      } else {
+        callback(null, true); // permissive for now — tighten after confirming URLs
+      }
+    },
+    methods: ['GET', 'POST'],
+    credentials: true,
   }
 });
 
@@ -101,8 +112,12 @@ server.listen(PORT, () => {
   console.log(`StuGig Server running on port ${PORT}`);
 });
 
-// Handle unhandled promise rejections
+// Handle unhandled promise rejections — log but don't exit in production
+// (Render will restart the instance on a real crash; exiting on every rejection
+//  causes a crash loop on free tier when external services are unreachable)
 process.on('unhandledRejection', (err) => {
   console.error(`Unhandled Rejection: ${err.message}`);
-  server.close(() => process.exit(1));
+  if (process.env.NODE_ENV !== 'production') {
+    server.close(() => process.exit(1));
+  }
 });
