@@ -34,6 +34,7 @@
 | **JobCardGrid** | `molecules/Card.jsx` | `job` object, `matchScore`, `onClick` | Job Listings (grid / Matchmaker results) |
 | **ReviewListItem** | `molecules/Card.jsx` | `review` object | Public Profile |
 | **TransactionRow** | `molecules/Card.jsx` | `payment` object | Payment & History |
+| **PortfolioCard** | `molecules/Card.jsx` | `item` object, `onDelete` | Freelancer Dashboard, Public Profile |
 | **FormField** | `molecules/FormField.jsx` | `label`, `htmlFor`, `error`, `hint`, `required`; wraps any input atom | All forms |
 | **SearchBar** | `molecules/SearchBar.jsx` | `placeholder`, `value`, `onChange`, `onSubmit` | Browse Services, Job Listings |
 | **FilterPanel** | `molecules/SearchBar.jsx` | `categories[]`, `filters`, `onFilterChange` | Browse Services, Job Listings |

@@ -3,20 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PublicNavbar from '../components/organisms/PublicNavbar';
 import Footer from '../components/organisms/Footer';
 import { ProfileHeaderBanner, TabBar } from '../components/organisms/ProfileHeader';
-import { ServiceCard, ReviewListItem } from '../components/molecules/Card';
+import { ServiceCard, ReviewListItem, PortfolioCard } from '../components/molecules/Card';
 import client from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 export default function PublicProfile() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
   const [profileUser, setProfileUser] = useState(null);
   const [services, setServices] = useState([]);
+  const [portfolio, setPortfolio] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [activeTab, setActiveTab] = useState('services');
+  const [activeTab, setActiveTab] = useState('portfolio');
   const [loading, setLoading] = useState(true);
 
   const tabs = [
+    { key: 'about', label: 'About' },
+    { key: 'portfolio', label: 'Portfolio' },
     { key: 'services', label: 'Offered Services' },
     { key: 'reviews', label: 'Ratings & Reviews' },
   ];
@@ -32,6 +37,10 @@ export default function PublicProfile() {
         // Fetch user services
         const servicesRes = await client.get(`/services?freelancerId=${userId}`);
         setServices(servicesRes.data.services || servicesRes.data || []);
+
+        // Fetch user portfolio
+        const portfolioRes = await client.get(`/portfolio/user/${userId}`);
+        setPortfolio(portfolioRes.data || []);
 
         // Fetch user reviews
         const reviewsRes = await client.get(`/reviews/user/${userId}`);
@@ -77,7 +86,10 @@ export default function PublicProfile() {
       <PublicNavbar />
 
       <main className="flex-grow max-w-[1440px] mx-auto px-8 py-8 w-full space-y-8">
-        <ProfileHeaderBanner user={profileUser} />
+        <ProfileHeaderBanner
+          user={profileUser}
+          isOwner={currentUser?._id === userId || currentUser?.id === userId}
+        />
 
         <div className="bg-white rounded-2xl border border-[#e7e8e9] overflow-hidden shadow-sm">
           <TabBar
@@ -87,6 +99,80 @@ export default function PublicProfile() {
           />
 
           <div className="p-6">
+            {activeTab === 'about' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-bold font-headline text-[#191c1d] mb-2">About {profileUser.name}</h3>
+                  <p className="text-sm text-[#464555] font-body whitespace-pre-wrap">
+                    {profileUser.bio || 'No bio provided.'}
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {profileUser.location && (
+                    <div>
+                      <h4 className="text-sm font-semibold font-label text-[#191c1d] mb-1">Location</h4>
+                      <p className="text-sm text-[#464555] font-body">{profileUser.location}</p>
+                    </div>
+                  )}
+                  {profileUser.phone && (
+                    <div>
+                      <h4 className="text-sm font-semibold font-label text-[#191c1d] mb-1">Contact</h4>
+                      <p className="text-sm text-[#464555] font-body">{profileUser.phone}</p>
+                    </div>
+                  )}
+                  {profileUser.role === 'freelancer' && profileUser.yearsOfExperience !== undefined && (
+                    <div>
+                      <h4 className="text-sm font-semibold font-label text-[#191c1d] mb-1">Experience</h4>
+                      <p className="text-sm text-[#464555] font-body">{profileUser.yearsOfExperience} {profileUser.yearsOfExperience === 1 ? 'year' : 'years'}</p>
+                    </div>
+                  )}
+                </div>
+
+                {profileUser.role === 'freelancer' && profileUser.skills?.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold font-label text-[#191c1d] mb-2">Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {profileUser.skills.map((skill, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-[#f3f4f5] text-[#464555] rounded-lg text-xs font-medium border border-[#e7e8e9]">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {profileUser.role === 'freelancer' && profileUser.languages?.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold font-label text-[#191c1d] mb-2">Languages</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {profileUser.languages.map((lang, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-[#f3f4f5] text-[#464555] rounded-lg text-xs font-medium border border-[#e7e8e9]">
+                          {lang}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'portfolio' && (
+              <div>
+                {portfolio.length === 0 ? (
+                  <p className="text-sm text-[#777587] font-body py-4 text-center">
+                    This user has not added any portfolio items yet.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {portfolio.map((item) => (
+                      <PortfolioCard key={item._id} item={item} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === 'services' && (
               <div>
                 {services.length === 0 ? (

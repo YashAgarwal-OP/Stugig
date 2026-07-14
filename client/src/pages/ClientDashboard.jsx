@@ -82,7 +82,7 @@ export default function ClientDashboard() {
   const paymentColumns = [
     { key: 'jobTitle', label: 'Job / Project', render: (_, row) => row.jobId?.title || 'Project' },
     { key: 'freelancer', label: 'Freelancer', render: (_, row) => row.freelancerId?.name || '—' },
-    { key: 'totalCharged', label: 'Amount', render: (v) => `$${v?.toFixed(2)}` },
+    { key: 'totalCharged', label: 'Amount', render: (_, row) => `$${(row.totalCharged ?? 0).toFixed(2)}` },
     { key: 'status', label: 'Status', render: (v) => <StatusPill status={v} /> },
   ];
 

@@ -1,36 +1,39 @@
 const mongoose = require('mongoose');
 
 const PaymentSchema = new mongoose.Schema({
-  job: {
+  jobId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Job',
     required: true
   },
-  client: {
+  clientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  freelancer: {
+  freelancerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  grossAmount: {
+  // The accepted bid amount (what the freelancer receives minus commission)
+  amount: {
     type: Number,
     required: true
   },
+  // 15% platform commission
   commissionAmount: {
     type: Number,
     required: true
   },
-  netAmount: {
+  // amount + commissionAmount — what the client is actually charged
+  totalCharged: {
     type: Number,
     required: true
   },
-  stripeSessionId: {
+  stripePaymentIntentId: {
     type: String,
-    required: true
+    default: ''
   },
   status: {
     type: String,

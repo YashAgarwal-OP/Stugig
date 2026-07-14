@@ -20,6 +20,38 @@ if (!stripeKey) {
 }
 const stripePromise = loadStripe(stripeKey);
 
+// Map Stripe decline codes to user-friendly messages.
+// See: https://stripe.com/docs/declines/codes
+const friendlyDeclineMessage = (error) => {
+  const code = error.decline_code || error.code;
+  switch (code) {
+    case 'insufficient_funds':
+      return 'Your card has insufficient funds. Please use a different card.';
+    case 'card_declined':
+      return 'Your card was declined. Please use a different card or contact your bank.';
+    case 'expired_card':
+      return 'Your card has expired. Please use a different card.';
+    case 'incorrect_cvc':
+      return 'The card security code (CVC) is incorrect. Please check and try again.';
+    case 'incorrect_number':
+    case 'invalid_number':
+      return 'The card number is invalid. Please check and try again.';
+    case 'incorrect_zip':
+      return 'The billing ZIP code does not match. Please check and try again.';
+    case 'lost_card':
+    case 'stolen_card':
+      return 'This card has been reported lost or stolen. Please use a different card.';
+    case 'do_not_honor':
+    case 'generic_decline':
+      return 'Your card was declined. Please contact your bank or use a different card.';
+    case 'processing_error':
+      return 'A processing error occurred. Please try again in a moment.';
+    default:
+      // Fall back to Stripe's own message, which is already user-facing
+      return error.message || 'Payment could not be completed. Please try again.';
+  }
+};
+
 // Simple SVG Icons
 const DashboardIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" /></svg>
@@ -61,15 +93,18 @@ function CheckoutForm({ jobId, onSuccess }) {
   const stripe = useStripe();
   const elements = useElements();
   const [clientSecret, setClientSecret] = useState('');
+  const [paymentId, setPaymentId] = useState(null); // MongoDB _id of the Payment record
   const [commissionInfo, setCommissionInfo] = useState(null);
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
+  const [confirmingWithServer, setConfirmingWithServer] = useState(false);
 
   useEffect(() => {
     const fetchIntent = async () => {
       try {
         const res = await client.post('/payments/create-intent', { jobId });
         setClientSecret(res.data.clientSecret);
+        setPaymentId(res.data.paymentId);
         setCommissionInfo(res.data);
       } catch (err) {
         setError(err.response?.data?.message || 'Error initializing checkout');
@@ -88,27 +123,58 @@ function CheckoutForm({ jobId, onSuccess }) {
     try {
       const cardEl = elements.getElement(CardElement);
       const result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: { card: cardEl }
+        payment_method: { card: cardEl },
       });
 
       if (result.error) {
-        setError(result.error.message);
-      } else {
-        if (result.paymentIntent.status === 'succeeded') {
-          onSuccess?.();
+        // Map to a user-friendly, specific error message
+        setError(friendlyDeclineMessage(result.error));
+        // Note: the Payment record stays 'pending' so the user can retry
+        // without creating a duplicate — create-intent will reuse this record.
+        return;
+      }
+
+      if (result.paymentIntent.status === 'succeeded') {
+        // Stripe confirmed on the client. Now verify server-side and update the DB.
+        // This is the reliable fallback that works without the Stripe CLI webhook forwarder.
+        setConfirmingWithServer(true);
+        try {
+          await client.post(`/payments/${paymentId}/confirm`);
+        } catch (confirmErr) {
+          // Non-fatal: the webhook will catch it eventually.
+          // Log it but still show success to the user since Stripe already confirmed.
+          console.warn('[CheckoutForm] Server-side confirm call failed (non-fatal):', confirmErr);
+        } finally {
+          setConfirmingWithServer(false);
         }
+        onSuccess?.();
       }
     } catch (err) {
-      setError('An error occurred during payment processing.');
+      setError('An unexpected error occurred during payment processing. Please try again.');
     } finally {
       setPaying(false);
     }
   };
 
+  const isLoading = paying || confirmingWithServer;
+  const buttonLabel = confirmingWithServer
+    ? 'Verifying with server...'
+    : paying
+    ? 'Processing Payment...'
+    : 'Pay with Sandbox Stripe';
+
   return (
     <Card className="p-6 max-w-md mx-auto space-y-6">
       <h2 className="text-lg font-bold font-headline text-[#191c1d]">Checkout Payment</h2>
-      {error && <p className="text-xs text-[#ba1a1a] font-body">{error}</p>}
+
+      {error && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-[#ba1a1a]/10 border border-[#ba1a1a]/30">
+          <svg className="w-4 h-4 text-[#ba1a1a] mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-xs text-[#ba1a1a] font-body leading-relaxed">{error}</p>
+        </div>
+      )}
 
       {commissionInfo && (
         <div className="space-y-2 border-b border-[#e7e8e9] pb-4 text-sm font-body text-[#464555]">
@@ -140,9 +206,14 @@ function CheckoutForm({ jobId, onSuccess }) {
             }
           }} />
         </div>
-        <Button type="submit" variant="primary" className="w-full" disabled={paying || !stripe}>
-          {paying ? 'Processing Payment...' : 'Pay with Sandbox Stripe'}
+        <Button type="submit" variant="primary" className="w-full" disabled={isLoading || !stripe}>
+          {buttonLabel}
         </Button>
+        {error && (
+          <p className="text-center text-xs text-[#464555] font-body">
+            You can correct the card details above and try again.
+          </p>
+        )}
       </form>
     </Card>
   );
@@ -198,7 +269,7 @@ export default function Payment() {
     <DashboardShell navItems={navItems}>
       <div className="max-w-[1440px] mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-[#191c1d]">Payments & Invoices</h1>
+          <h1 className="text-3xl font-bold font-headline text-[#191c1d]">Payments &amp; Invoices</h1>
           <p className="text-sm text-[#464555] font-body mt-1">Review financial transactions, platform fee allocations, and settle jobs.</p>
         </div>
 

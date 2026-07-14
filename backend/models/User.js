@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please add a name']
+    required: [true, 'Please add a name'],
+    trim: true
   },
   email: {
     type: String,
@@ -18,21 +19,30 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please add a password'],
     minlength: 6,
-    select: false // Exclude from queries by default
+    select: false
   },
   role: {
     type: String,
-    enum: ['freelancer', 'client'],
+    enum: ['freelancer', 'client', 'admin'],
     required: [true, 'Please select a role']
   },
-  skills: {
-    type: [String],
-    default: []
+  status: {
+    type: String,
+    enum: ['active', 'suspended'],
+    default: 'active'
   },
-  rating: {
-    type: Number,
-    default: 0
-  },
+  // Profile fields
+  tagline: { type: String, default: '' },
+  bio: { type: String, default: '' },
+  phone: { type: String, default: '' },
+  location: { type: String, default: '' },
+  profilePhotoUrl: { type: String, default: '' },
+  // Freelancer-specific
+  skills: { type: [String], default: [] },
+  languages: { type: [String], default: [] },
+  yearsOfExperience: { type: Number, default: 0 },
+  rating: { type: Number, default: 0 },
+  reviewCount: { type: Number, default: 0 },
   createdAt: {
     type: Date,
     default: Date.now

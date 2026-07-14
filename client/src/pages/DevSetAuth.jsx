@@ -43,7 +43,11 @@ export default function DevSetAuth() {
       localStorage.setItem('stugig_token', token);
       localStorage.setItem('stugig_user', JSON.stringify(user));
       // Redirect to role-appropriate dashboard
-      navigate(`/dashboard/${user.role}`, { replace: true });
+      if (user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(`/dashboard/${user.role}`, { replace: true });
+      }
     } catch (err) {
       console.error('[DevSetAuth] Failed to parse user param:', err);
       navigate('/login');

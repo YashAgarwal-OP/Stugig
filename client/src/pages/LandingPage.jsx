@@ -137,7 +137,7 @@ export default function LandingPage() {
                   hover
                   onClick={() => navigate(`/profile/${freelancer._id}`)}
                 >
-                  <Avatar src={freelancer.avatarUrl} name={freelancer.name} size="lg" />
+                  <Avatar src={freelancer.profilePhotoUrl} name={freelancer.name} size="lg" />
                   <div>
                     <h3 className="font-semibold font-headline text-sm text-[#191c1d]">{freelancer.name}</h3>
                     <p className="text-xs text-[#464555] font-body truncate max-w-[180px]">{freelancer.bio || 'Student Freelancer'}</p>

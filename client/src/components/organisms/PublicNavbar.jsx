@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../atoms/Avatar';
 import Button from '../atoms/Button';
+import NotificationBell from './NotificationBell';
 
 export default function PublicNavbar() {
   const navigate = useNavigate();
@@ -43,7 +44,8 @@ export default function PublicNavbar() {
             >
               Messages
             </button>
-            <Avatar name={user.name} size="sm" />
+            <NotificationBell />
+            <Avatar src={user.profilePhotoUrl} name={user.name} size="sm" />
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               Log Out
             </Button>

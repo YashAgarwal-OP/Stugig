@@ -40,13 +40,21 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  // Update the stored user object in-place (e.g. after profile edit)
+  // Does NOT make a network request — just syncs state + localStorage.
+  const updateUser = useCallback((updatedUser) => {
+    const merged = { ...JSON.parse(localStorage.getItem('stugig_user') || '{}'), ...updatedUser };
+    localStorage.setItem('stugig_user', JSON.stringify(merged));
+    setUser(merged);
+  }, []);
+
   const isAuthenticated = !!token && !!user;
   const isFreelancer = user?.role === 'freelancer';
   const isClient = user?.role === 'client';
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, logout, isAuthenticated, isFreelancer, isClient, isAdmin }}>
+    <AuthContext.Provider value={{ user, token, login, signup, logout, updateUser, isAuthenticated, isFreelancer, isClient, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

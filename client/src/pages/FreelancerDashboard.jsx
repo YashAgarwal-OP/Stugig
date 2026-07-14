@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardShell from '../components/organisms/DashboardShell';
-import { StatCard, JobCardGrid } from '../components/molecules/Card';
+import { StatCard, JobCardGrid, PortfolioCard } from '../components/molecules/Card';
 import AIFeatureCard from '../components/molecules/AIFeatureCard';
 import Table from '../components/molecules/Table';
+import FormField from '../components/molecules/FormField';
+import Button from '../components/atoms/Button';
 import { StatusPill } from '../components/atoms/Badge';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { formatExpectedDelivery } from '../utils/deliveryUtils';
 
 // Simple SVG Icons
 const DashboardIcon = () => (
@@ -24,13 +27,17 @@ const MessagesIcon = () => (
 const PaymentsIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
 );
+const MyServicesIcon = () => (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+);
 
 const freelancerNavItems = [
-  { label: 'Dashboard', to: '/dashboard/freelancer', icon: <DashboardIcon /> },
-  { label: 'Browse Services', to: '/services', icon: <ServicesIcon /> },
-  { label: 'Find Jobs', to: '/jobs', icon: <JobsIcon /> },
-  { label: 'Messages', to: '/messages', icon: <MessagesIcon /> },
-  { label: 'Payments', to: '/payment', icon: <PaymentsIcon /> },
+  { label: 'Dashboard',    to: '/dashboard/freelancer', icon: <DashboardIcon /> },
+  { label: 'My Services',  to: '/services/manage',      icon: <MyServicesIcon /> },
+  { label: 'Browse Services', to: '/services',          icon: <ServicesIcon /> },
+  { label: 'Find Jobs',    to: '/jobs',                 icon: <JobsIcon /> },
+  { label: 'Messages',     to: '/messages',             icon: <MessagesIcon /> },
+  { label: 'Payments',     to: '/payment',              icon: <PaymentsIcon /> },
 ];
 
 export default function FreelancerDashboard() {
@@ -40,19 +47,30 @@ export default function FreelancerDashboard() {
   const [matches, setMatches] = useState([]);
   const [bids, setBids] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Portfolio Form State
+  const [showPortfolioForm, setShowPortfolioForm] = useState(false);
+  const [portfolioTitle, setPortfolioTitle] = useState('');
+  const [portfolioDesc, setPortfolioDesc] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [portfolioImage, setPortfolioImage] = useState(null);
+  const [addingPortfolio, setAddingPortfolio] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [matchRes, bidsRes, payRes] = await Promise.all([
+        const [matchRes, bidsRes, payRes, portRes] = await Promise.all([
           client.get('/matchmaker/jobs'),
           client.get('/bids/my-bids'),
-          client.get('/payments/history')
+          client.get('/payments/history'),
+          client.get('/portfolio')
         ]);
         setMatches(matchRes.data || []);
         setBids(bidsRes.data || []);
         setPayments(payRes.data || []);
+        setPortfolio(portRes.data || []);
       } catch (err) {
         console.error('Error fetching freelancer dashboard data:', err);
       } finally {
@@ -78,8 +96,62 @@ export default function FreelancerDashboard() {
     )},
     { key: 'client', label: 'Client', render: (_, row) => row.jobId?.clientId?.name || '—' },
     { key: 'status', label: 'Status', render: (v) => <StatusPill status={v} /> },
-    { key: 'deliveryTime', label: 'Delivery', render: (v) => v || '—' },
+    {
+      key: 'deliveryTime',
+      label: 'Delivery',
+      render: (v, row) => {
+        if (row.status === 'accepted' && row.acceptedAt) {
+          return (
+            <div>
+              <div className="text-xs text-[#777587]">{v}</div>
+              <div className="text-xs font-semibold text-[#3525cd] mt-0.5">
+                {formatExpectedDelivery(v, row.acceptedAt)}
+              </div>
+            </div>
+          );
+        }
+        return v || '—';
+      },
+    },
   ];
+
+  const handleAddPortfolio = async (e) => {
+    e.preventDefault();
+    if (!portfolioTitle || !portfolioDesc || !portfolioImage) return;
+    setAddingPortfolio(true);
+    try {
+      const data = new FormData();
+      data.append('title', portfolioTitle);
+      data.append('description', portfolioDesc);
+      if (portfolioUrl) data.append('projectUrl', portfolioUrl);
+      data.append('image', portfolioImage);
+
+      const res = await client.post('/portfolio', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setPortfolio([res.data, ...portfolio]);
+      setShowPortfolioForm(false);
+      setPortfolioTitle('');
+      setPortfolioDesc('');
+      setPortfolioUrl('');
+      setPortfolioImage(null);
+    } catch (err) {
+      console.error('Error adding portfolio item', err);
+      alert('Failed to add portfolio item. Make sure you selected an image.');
+    } finally {
+      setAddingPortfolio(false);
+    }
+  };
+
+  const handleDeletePortfolio = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    try {
+      await client.delete(`/portfolio/${id}`);
+      setPortfolio(portfolio.filter(p => p._id !== id));
+    } catch (err) {
+      console.error('Error deleting item', err);
+    }
+  };
 
   return (
     <DashboardShell navItems={freelancerNavItems}>
@@ -155,6 +227,53 @@ export default function FreelancerDashboard() {
                   rows={bids}
                   onRowClick={(row) => navigate(`/jobs/${row.jobId?._id}`)}
                 />
+              )}
+            </div>
+
+            {/* My Portfolio Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold font-headline text-[#191c1d]">My Portfolio</h2>
+                <Button variant="secondary" size="sm" onClick={() => setShowPortfolioForm(!showPortfolioForm)}>
+                  {showPortfolioForm ? 'Cancel' : 'Add Item'}
+                </Button>
+              </div>
+
+              {showPortfolioForm && (
+                <div className="bg-white p-6 rounded-2xl border border-[#e7e8e9] mb-6">
+                  <h3 className="text-lg font-bold font-headline mb-4">Add Portfolio Item</h3>
+                  <form onSubmit={handleAddPortfolio} className="space-y-4">
+                    <FormField label="Title" required>
+                      <input type="text" value={portfolioTitle} onChange={e => setPortfolioTitle(e.target.value)} required className="w-full p-2 border border-[#c7c4d8] rounded-lg" />
+                    </FormField>
+                    <FormField label="Description" required>
+                      <textarea value={portfolioDesc} onChange={e => setPortfolioDesc(e.target.value)} required rows={3} className="w-full p-2 border border-[#c7c4d8] rounded-lg" />
+                    </FormField>
+                    <FormField label="Project URL (Optional)">
+                      <input type="url" value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)} className="w-full p-2 border border-[#c7c4d8] rounded-lg" placeholder="https://" />
+                    </FormField>
+                    <FormField label="Image" required>
+                      <input type="file" accept="image/*" onChange={e => setPortfolioImage(e.target.files[0])} required className="w-full p-2 border border-[#c7c4d8] rounded-lg bg-gray-50" />
+                    </FormField>
+                    <div className="flex justify-end mt-4">
+                      <Button type="submit" variant="primary" disabled={addingPortfolio}>
+                        {addingPortfolio ? 'Uploading...' : 'Save Item'}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {portfolio.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-[#e7e8e9] p-8 text-center text-[#464555] font-body text-sm">
+                  You haven't added any portfolio items yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {portfolio.map(item => (
+                    <PortfolioCard key={item._id} item={item} onDelete={handleDeletePortfolio} />
+                  ))}
+                </div>
               )}
             </div>
           </>

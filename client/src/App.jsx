@@ -8,9 +8,12 @@ import Login from './pages/Login';
 import FreelancerDashboard from './pages/FreelancerDashboard';
 import ClientDashboard from './pages/ClientDashboard';
 import BrowseServices from './pages/BrowseServices';
+import ServiceDetail from './pages/ServiceDetail';
+import MyServices from './pages/MyServices';
 import PostJob from './pages/PostJob';
 import JobListings from './pages/JobListings';
 import JobDetail from './pages/JobDetail';
+import EditProfile from './pages/EditProfile';
 import Messages from './pages/Messages';
 import Payment from './pages/Payment';
 import PublicProfile from './pages/PublicProfile';
@@ -45,6 +48,10 @@ export default function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
           <Route path="/services" element={<BrowseServices />} />
+          <Route path="/services/manage" element={
+            <RequireAuth><RequireRole role="freelancer"><MyServices /></RequireRole></RequireAuth>
+          } />
+          <Route path="/services/:id" element={<ServiceDetail />} />
           <Route path="/jobs" element={<JobListings />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/profile/:userId" element={<PublicProfile />} />
@@ -70,6 +77,7 @@ export default function App() {
           {/* Shared auth routes */}
           <Route path="/messages" element={<RequireAuth><Messages /></RequireAuth>} />
           <Route path="/payment" element={<RequireAuth><Payment /></RequireAuth>} />
+          <Route path="/profile/edit" element={<RequireAuth><EditProfile /></RequireAuth>} />
           <Route path="/jobs/new" element={<RequireAuth><RequireRole role="client"><PostJob /></RequireRole></RequireAuth>} />
 
           {/* DEV ONLY — auth injection helper, stripped from production builds */}

@@ -61,9 +61,10 @@ export default function Messages() {
   // Initialize socket connection
   useEffect(() => {
     if (!token) return;
-    const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin;
-    socketRef.current = io(socketUrl, {
-      auth: { token }
+    // Connect to the same origin — Vite proxy forwards /socket.io to the backend
+    socketRef.current = io(window.location.origin, {
+      auth: { token },
+      path: '/socket.io',
     });
 
     socketRef.current.on('connect', () => {
@@ -71,10 +72,10 @@ export default function Messages() {
     });
 
     socketRef.current.on('new-message', (message) => {
-      // Append if it belongs to the active conversation
-      if (activeConversation && message.jobId === activeConversation) {
+      // jobId may be a populated object or a plain string depending on server populate
+      const incomingJobId = message.jobId?._id?.toString() || message.jobId?.toString();
+      if (activeConversation && incomingJobId === activeConversation) {
         setMessages((prev) => [...prev, message]);
-        // Auto scroll
         scrollToBottom();
       }
       // Re-fetch threads list to update latest messages
@@ -144,13 +145,17 @@ export default function Messages() {
   const handleSendMessage = (text) => {
     if (!socketRef.current || !activeConversation) return;
 
-    // Find recipient
+    // Find recipient — safely access latestMessage fields
     const activeThread = conversations.find(c => c._id === activeConversation);
-    if (!activeThread) return;
+    if (!activeThread?.latestMessage?.senderId?._id) return;
 
-    const receiverId = user._id.toString() === activeThread.latestMessage.senderId._id.toString()
-      ? activeThread.latestMessage.receiverId._id
+    const myId = (user._id || user.id).toString();
+    const isSenderMe = myId === activeThread.latestMessage.senderId._id.toString();
+    const receiverId = isSenderMe
+      ? activeThread.latestMessage.receiverId?._id
       : activeThread.latestMessage.senderId._id;
+
+    if (!receiverId) return;
 
     socketRef.current.emit('send-message', {
       conversationId: activeConversation,
@@ -192,7 +197,10 @@ export default function Messages() {
               <div className="text-center py-8 text-[#464555] font-body text-sm px-4">No active conversations found. Apply to jobs to start a chat.</div>
             ) : (
               conversations.map((c) => {
-                const isSenderMe = user._id.toString() === c.latestMessage.senderId._id.toString();
+                // Guard: skip threads with no latestMessage (shouldn't happen but be safe)
+                if (!c.latestMessage?.senderId?._id) return null;
+                const myId = (user._id || user.id).toString();
+                const isSenderMe = myId === c.latestMessage.senderId._id.toString();
                 const other = isSenderMe ? c.latestMessage.receiverId : c.latestMessage.senderId;
                 const threadData = {
                   jobTitle: c.latestMessage.jobId?.title || 'Job Thread',
@@ -249,7 +257,7 @@ export default function Messages() {
                       createdAt: m.createdAt,
                       sender: m.senderId
                     }}
-                    isOwn={m.senderId._id.toString() === user._id.toString()}
+                    isOwn={(m.senderId?._id?.toString() || m.senderId?.toString()) === (user._id || user.id).toString()}
                   />
                 ))}
                 {typingUser && <TypingIndicator name={typingUser} />}
@@ -278,14 +286,14 @@ export default function Messages() {
           open={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
           jobId={activeConversation}
-          revieweeId={
-            conversations.find((c) => c._id === activeConversation)
-              ? user._id.toString() ===
-                conversations.find((c) => c._id === activeConversation).latestMessage.senderId._id.toString()
-                ? conversations.find((c) => c._id === activeConversation).latestMessage.receiverId._id
-                : conversations.find((c) => c._id === activeConversation).latestMessage.senderId._id
-              : null
-          }
+          revieweeId={(() => {
+            const thread = conversations.find((c) => c._id === activeConversation);
+            if (!thread?.latestMessage?.senderId?._id) return null;
+            const myId = (user._id || user.id).toString();
+            return myId === thread.latestMessage.senderId._id.toString()
+              ? thread.latestMessage.receiverId?._id
+              : thread.latestMessage.senderId._id;
+          })()}
           onReviewSubmitted={async () => {
             // Re-fetch job info to reflect review state if needed
             const jobRes = await client.get(`/jobs/${activeConversation}`);

@@ -17,15 +17,19 @@ export function Badge({ children, variant = 'primary', className }) {
 
 // Status pill with semantic colors
 const statusMap = {
-  open:        'bg-[#e2dfff] text-[#3525cd]',
-  pending:     'bg-[#ffdbcc] text-[#7e3000]',
+  open:          'bg-[#e2dfff] text-[#3525cd]',
+  pending:       'bg-[#ffdbcc] text-[#7e3000]',
   'in-progress': 'bg-[#89f5e7] text-[#006a61]',
-  completed:   'bg-[#86f2e4] text-[#005049]',
-  paid:        'bg-[#86f2e4] text-[#005049]',
-  refunded:    'bg-[#ffdad6] text-[#93000a]',
-  rejected:    'bg-[#ffdad6] text-[#93000a]',
-  accepted:    'bg-[#89f5e7] text-[#006a61]',
-  disputed:    'bg-[#ffdbcc] text-[#7e3000]',
+  completed:     'bg-[#86f2e4] text-[#005049]',
+  paid:          'bg-[#86f2e4] text-[#005049]',
+  refunded:      'bg-[#ffdad6] text-[#93000a]',
+  rejected:      'bg-[#ffdad6] text-[#93000a]',
+  accepted:      'bg-[#89f5e7] text-[#006a61]',
+  disputed:      'bg-[#ffdbcc] text-[#7e3000]',
+  active:        'bg-[#86f2e4] text-[#005049]',
+  paused:        'bg-[#e1e3e4] text-[#464555]',
+  suspended:     'bg-[#ffdad6] text-[#93000a]',
+  closed:        'bg-[#e1e3e4] text-[#464555]',
 };
 
 export function StatusPill({ status, className }) {

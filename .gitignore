@@ -13,6 +13,12 @@ build/
 .vite/
 
 # ============================================================
+# STALE DIRECTORIES — legacy scaffolding, not part of the app
+# ============================================================
+/server/
+/frontend/
+
+# ============================================================
 # ENVIRONMENT & SECRETS — NEVER COMMIT THESE
 # ============================================================
 .env
@@ -30,6 +36,11 @@ build/
 # appear in public/ or be accessible as a static file in prod
 # ============================================================
 client/public/set-auth.html
+
+# ============================================================
+# Uploaded files — stored on disk in dev, use cloud storage in prod
+# ============================================================
+backend/uploads/
 
 # ============================================================
 # Logs

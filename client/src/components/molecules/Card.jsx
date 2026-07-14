@@ -37,11 +37,11 @@ export function StatCard({ label, value, icon, trend, className }) {
 
 // ServiceCard — used on Browse Services
 export function ServiceCard({ service, onClick }) {
-  const { title, price, deliveryTime, category, images = [], freelancerId } = service || {};
+  const { title, price, deliveryTime, category, imageUrl, freelancerId } = service || {};
   return (
     <Card hover className="overflow-hidden" onClick={onClick}>
       <div className="h-36 bg-[#e2dfff] relative">
-        {images[0] && <img src={images[0]} alt={title} className="w-full h-full object-cover" />}
+        {imageUrl && <img src={imageUrl} alt={title} className="w-full h-full object-cover" />}
         <span className="absolute top-3 right-3 bg-[#a44100] text-white text-xs font-semibold px-2.5 py-1 rounded-full font-label">
           ${price}
         </span>
@@ -123,7 +123,7 @@ export function JobCardGrid({ job, matchScore, onClick }) {
 
 // ReviewListItem
 export function ReviewListItem({ review }) {
-  const { reviewerId, rating, text, createdAt } = review || {};
+  const { reviewerId, rating, comment, createdAt } = review || {};
   return (
     <div className="border-b border-[#e7e8e9] py-4 last:border-0">
       <div className="flex items-center gap-3 mb-2">
@@ -138,7 +138,7 @@ export function ReviewListItem({ review }) {
           <span className="text-[#a44100] font-semibold text-sm">{'★'.repeat(Math.round(rating ?? 0))}</span>
         </div>
       </div>
-      <p className="text-sm text-[#464555] font-body">{text}</p>
+      <p className="text-sm text-[#464555] font-body">{comment}</p>
     </div>
   );
 }
@@ -159,5 +159,41 @@ export function TransactionRow({ payment }) {
       </div>
       <span className={`text-xs font-semibold font-label capitalize ${statusColors[status] ?? 'text-[#464555]'}`}>{status}</span>
     </div>
+  );
+}
+// PortfolioCard — used in FreelancerDashboard and PublicProfile
+export function PortfolioCard({ item, onDelete }) {
+  const { title, description, imageUrl, projectUrl } = item || {};
+  return (
+    <Card className="flex flex-col overflow-hidden">
+      <div className="relative aspect-video bg-[#f3f4f5]">
+        {imageUrl ? (
+          <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[#777587]">No Image</div>
+        )}
+      </div>
+      <div className="p-4 flex-1 flex flex-col">
+        <h3 className="font-semibold text-[#191c1d] mb-1 font-headline truncate">{title}</h3>
+        <p className="text-sm text-[#464555] font-body line-clamp-3 mb-4 flex-1">{description}</p>
+        <div className="flex items-center justify-between mt-auto pt-4 border-t border-[#e7e8e9]">
+          {projectUrl ? (
+            <a href={projectUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[#3525cd] hover:underline">
+              View Project
+            </a>
+          ) : (
+            <span />
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(item._id)}
+              className="text-sm font-semibold text-[#ba1a1a] hover:opacity-80"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }

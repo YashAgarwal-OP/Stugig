@@ -13,7 +13,7 @@ export function ConversationListItem({ thread, active, onClick }) {
         active ? 'bg-[#e2dfff]' : 'hover:bg-[#f3f4f5]'
       )}
     >
-      <Avatar name={otherUser?.name} size="sm" />
+      <Avatar src={otherUser?.profilePhotoUrl} name={otherUser?.name} size="sm" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold font-label text-[#191c1d] truncate">{otherUser?.name ?? 'User'}</p>
         <p className="text-xs text-[#777587] truncate">{jobTitle ?? ''}</p>
@@ -31,7 +31,7 @@ export function MessageBubble({ message, isOwn }) {
   const { text, createdAt, sender } = message || {};
   return (
     <div className={clsx('flex items-end gap-2', isOwn ? 'flex-row-reverse' : 'flex-row')}>
-      {!isOwn && <Avatar name={sender?.name} size="xs" />}
+      {!isOwn && <Avatar src={sender?.profilePhotoUrl} name={sender?.name} size="xs" />}
       <div className={clsx(
         'max-w-xs lg:max-w-md rounded-2xl px-4 py-2.5 text-sm font-body',
         isOwn
