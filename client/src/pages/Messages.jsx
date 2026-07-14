@@ -147,19 +147,24 @@ export default function Messages() {
 
     // Find recipient — safely access latestMessage fields
     const activeThread = conversations.find(c => c._id === activeConversation);
-    if (!activeThread?.latestMessage?.senderId?._id) return;
+    if (!activeThread?.latestMessage) return;
 
     const myId = (user._id || user.id).toString();
-    const isSenderMe = myId === activeThread.latestMessage.senderId._id.toString();
-    const receiverId = isSenderMe
-      ? activeThread.latestMessage.receiverId?._id
-      : activeThread.latestMessage.senderId._id;
+    
+    // Determine the other user in this conversation
+    const senderId = activeThread.latestMessage.senderId?._id?.toString() || activeThread.latestMessage.senderId?.toString();
+    const receiverId = activeThread.latestMessage.receiverId?._id?.toString() || activeThread.latestMessage.receiverId?.toString();
+    
+    const otherUserId = senderId === myId ? receiverId : senderId;
 
-    if (!receiverId) return;
+    if (!otherUserId) {
+      console.error('[handleSendMessage] Could not determine receiver ID');
+      return;
+    }
 
     socketRef.current.emit('send-message', {
       conversationId: activeConversation,
-      receiverId,
+      receiverId: otherUserId,
       content: text
     });
   };
@@ -238,9 +243,15 @@ export default function Messages() {
                       Mark Job as Complete
                     </Button>
                   )}
+                  {/* Pay Freelancer CTA */}
+                  {user.role === 'client' && activeJob?.status === 'completed' && (
+                    <Button variant="primary" size="sm" onClick={() => window.location.href = `/payment?jobId=${activeConversation}`}>
+                      Pay Freelancer
+                    </Button>
+                  )}
                   {/* Leave Feedback CTA */}
                   {activeJob?.status === 'completed' && (
-                    <Button variant="primary" size="sm" onClick={() => setReviewModalOpen(true)}>
+                    <Button variant="secondary" size="sm" onClick={() => setReviewModalOpen(true)}>
                       Leave Feedback
                     </Button>
                   )}
